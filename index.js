@@ -52,6 +52,7 @@ async function run() {
     const db = client.db('plantNet-session');
     const usersCollection = db.collection('users');
     const plantsCollection = db.collection('plants');
+    const ordersCollection = db.collection('orders');
 
 
     //save or update user in db
@@ -118,6 +119,24 @@ async function run() {
       const result = await plantsCollection.find().toArray();
       res.send(result);
     })
+
+    //get a plant by id
+    app.get('/plants/:id', async(req, res) =>{
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id)};
+      const result = await plantsCollection.findOne(query);
+      res.send(result);
+    })
+
+    //save order in db
+    app.post('/order', verifyToken, async(req, res)=>{
+      const orderInfo = req.body;
+      console.log(orderInfo);
+      const result = await ordersCollection.insertOne(orderInfo);
+      res.send(result);
+    })
+
+
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
