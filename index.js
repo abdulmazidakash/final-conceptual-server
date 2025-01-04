@@ -137,6 +137,17 @@ async function run() {
     })
 
 
+    //manage plant quantity
+    app.patch('/plants/quantity/:id', verifyToken, async(req, res) =>{
+      const id = req.params.id;
+      const {quantityToUpdate} = req.body;
+      const filter = { _id: new ObjectId(id)};
+      const updateDoc = {
+        $inc: {quantity: -quantityToUpdate},
+      }
+      const result = await plantsCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
