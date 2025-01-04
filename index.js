@@ -149,6 +149,47 @@ async function run() {
       res.send(result);
     })
 
+    //get all users for a specific customer
+    app.get('/customer-orders/:email', verifyToken, async(req, res)=>{
+      const email = req.params.email;
+      const query = {'customer.email': email};
+      const result = await ordersCollection
+      .aggregate([
+        {
+          $match: query,
+        },
+        {
+          $addFields: {
+            plantId: { $toObjectId: '$plantId'},
+          },
+        },
+        {
+          $lookup: {
+            from: 'plants',
+            localField: 'plantId',
+            foreignField: '_id',
+            as: 'plants',
+          },
+        },
+        {$unwind: '$plants'},
+        {
+          $addFields: {
+            name: '$plants.name',
+            image: '$plants.image',
+            category: '$plants.category',
+          },
+        },
+        {
+          $project: {
+            plants: 0,
+          },
+        },
+      ])
+      
+      .toArray();
+      res.send(result);
+    })
+
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
     console.log(
