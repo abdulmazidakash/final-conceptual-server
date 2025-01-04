@@ -152,7 +152,7 @@ async function run() {
     //get all users for a specific customer
     app.get('/customer-orders/:email', verifyToken, async(req, res)=>{
       const email = req.params.email;
-      const query = {'customer.email': email};
+      const query = {'customer.email': email}; //match specific customers data only by email
       const result = await ordersCollection
       .aggregate([
         {
@@ -160,22 +160,23 @@ async function run() {
         },
         {
           $addFields: {
-            plantId: { $toObjectId: '$plantId'},
+            plantId: { $toObjectId: '$plantId'}, //convert plantId string field to objectId field
           },
         },
         {
           $lookup: {
-            from: 'plants',
-            localField: 'plantId',
-            foreignField: '_id',
-            as: 'plants',
+            //go to different collection and look for data
+            from: 'plants',  //collection name
+            localField: 'plantId',  //local data that you want to match
+            foreignField: '_id',  //foreign field name of that same data
+            as: 'plants',  //return the data as plants array (array naming)
           },
         },
-        {$unwind: '$plants'},
+        {$unwind: '$plants'},  //unwind lookup result, return without array
         {
-          $addFields: {
+          $addFields: {  //add these fields in order object
             name: '$plants.name',
-            image: '$plants.image',
+            image: '$plants.imageURL',
             category: '$plants.category',
           },
         },
@@ -187,6 +188,14 @@ async function run() {
       ])
       
       .toArray();
+      res.send(result);
+    })
+
+    //cancel or delete function
+    app.delete('/orders/:id', verifyToken, async(req, res) =>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await ordersCollection.deleteOne(query);
       res.send(result);
     })
 
