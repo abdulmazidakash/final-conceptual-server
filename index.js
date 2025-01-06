@@ -138,16 +138,40 @@ async function run() {
 
 
     //manage plant quantity
-    app.patch('/plants/quantity/:id', verifyToken, async(req, res) =>{
-      const id = req.params.id;
-      const {quantityToUpdate} = req.body;
-      const filter = { _id: new ObjectId(id)};
-      const updateDoc = {
-        $inc: {quantity: -quantityToUpdate},
+    // app.patch('/plants/quantity/:id', verifyToken, async(req, res) =>{
+    //   const id = req.params.id;
+    //   const {quantityToUpdate, status} = req.body;
+    //   const filter = { _id: new ObjectId(id)};
+    //   const updateDoc = {
+    //     $inc: {quantity: -quantityToUpdate},
+    //   }
+    //   if(status === 'increase' ){
+    //     updateDoc = {
+    //       $inc: { quantity: quantityToUpdate},
+    //     }
+    //   }
+    //   const result = await plantsCollection.updateOne(filter, updateDoc);
+    //   res.send(result);
+    // })
+
+     //shakil vai
+     // Manage plant quantity
+     app.patch('/plants/quantity/:id', verifyToken, async (req, res) => {
+      const id = req.params.id
+      const { quantityToUpdate, status } = req.body
+      const filter = { _id: new ObjectId(id) }
+      let updateDoc = {
+        $inc: { quantity: -quantityToUpdate },
       }
-      const result = await plantsCollection.updateOne(filter, updateDoc);
-      res.send(result);
+      if (status === 'increase') {
+        updateDoc = {
+          $inc: { quantity: quantityToUpdate },
+        }
+      }
+      const result = await plantsCollection.updateOne(filter, updateDoc)
+      res.send(result)
     })
+
 
     //get all users for a specific customer
     app.get('/customer-orders/:email', verifyToken, async(req, res)=>{
@@ -195,10 +219,17 @@ async function run() {
     app.delete('/orders/:id', verifyToken, async(req, res) =>{
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
+      const order = await ordersCollection.findOne(query);
+
+      if(order. status === 'Delivered')
+        return res
+            .status(409)
+            .send('cannot cancel once the product is delivered !')
       const result = await ordersCollection.deleteOne(query);
       res.send(result);
     })
 
+   
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
     console.log(
