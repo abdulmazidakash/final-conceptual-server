@@ -97,8 +97,25 @@ async function run() {
     //get all user data
     app.get('/all-users/:email', verifyToken, async(req, res) =>{
       const email = req.params.email;
+      // console.log('all email--->', email);
       const query = { email: {$ne: email }}
+      // console.log('query detect', query);
       const result = await usersCollection.find(query).toArray();
+      // console.log(result);
+      res.send(result);
+    });
+
+    //update a user role and status
+    app.patch('/user/role/:email', verifyToken, async(req, res) =>{
+      const email = req.params.email;
+      // console.log(email);
+      const { role } = req.body;
+      // console.log(role, status);
+      const filter = { email };
+      const updateDoc = {
+        $set: { role, status: 'Verified'},
+      }
+      const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     })
 
@@ -165,7 +182,7 @@ async function run() {
     //save order in db
     app.post('/order', verifyToken, async(req, res)=>{
       const orderInfo = req.body;
-      console.log(orderInfo);
+      // console.log(orderInfo);
       const result = await ordersCollection.insertOne(orderInfo);
       res.send(result);
     })
