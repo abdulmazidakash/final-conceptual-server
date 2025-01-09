@@ -2,6 +2,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
+const nodemailer = require("nodemailer");
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const jwt = require('jsonwebtoken')
 const morgan = require('morgan')
@@ -36,6 +37,48 @@ const verifyToken = async (req, res, next) => {
     req.user = decoded;
     next()
   })
+}
+
+//send email using middleware
+const sendEmail = (emailAddress, emailData) =>{
+  //create transporter
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, //true for port 465, false for other ports
+    auth: {
+      user: process.env.NODEMAILER_USER,
+      pass: process.env.NODEMAILER_PASS,
+    }
+  })
+
+  //verify connection
+  transporter.verify((error, success) => {
+    if(error){
+      console.log(error);
+    }else{
+      console.log('transporter is ready to emails.', success);
+    }
+  })
+
+  //transporter.sendMail()
+  const mailBody = {
+    from: process.env.NODEMAILER_USER, // sender address
+    to: emailAddress, // list of receivers
+    subject: emailData?.subject, // Subject line
+    // text: emailData?.message, // plain text body
+    html: `<p>${emailData?.message}</p>`, // html body
+  }
+
+  //send email
+  transporter.sendMail(mailBody, (error, info)=>{
+    if(error){
+      console.log(error);
+    } else{
+      console.log(info);
+      console.log('Email Sent: ' + info?.response);
+    }
+  });
 }
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.j0hxo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -83,6 +126,7 @@ async function run() {
 
     //save or update user in db
     app.post('/users/:email', async(req, res) =>{
+      sendEmail()
       const email = req.params.email;
       const query = { email};
       const user = req.body;
@@ -151,6 +195,18 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+
+    //update a order status
+    app.patch('/orders/:id', verifyToken, verifySeller, async(req, res) =>{
+      const id = req.params.id;
+      const {status} = req.body;
+      const filter = { _id: new ObjectId(id)};
+      const updateDoc = {
+        $set: {status},
+      }
+      const result = await ordersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
 
     //delete a plant from db by seller
     app.delete('/plants/:id', verifyToken, verifySeller, async(req, res) =>{
@@ -227,6 +283,20 @@ async function run() {
       const orderInfo = req.body;
       // console.log(orderInfo);
       const result = await ordersCollection.insertOne(orderInfo);
+      //send email
+      if(result?.insertedId){
+        //to customer
+        sendEmail(orderInfo?.customer?.email, {
+          subject: 'Order Successful',
+          message: `You've placed an order successfully. Transaction Id: ${result?.insertedId}`,
+        })
+
+        //to seller
+        sendEmail(orderInfo?.seller, {
+          subject: 'Hurray!, You have an order to process',
+          message: `Get the plants ready for ${orderInfo?.customer?.name}`
+        })
+      }
       res.send(result);
     })
 
