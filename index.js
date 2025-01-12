@@ -15,7 +15,7 @@ const port = process.env.PORT || 9000
 const app = express()
 // middleware
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'https://final-conceptual-server.vercel.app', 'https://final-conceptual-23.web.app', 'https://vercel.com/abdul-mazid-akashs-projects/final-conceptual-server/2uDJP5VPWZfSRcEnLANq8nNhmo6J', 'https://final-conceptual-plantnet.netlify.app'],
   credentials: true,
   optionSuccessStatus: 200,
 }
@@ -571,10 +571,10 @@ async function run() {
     })
    
     // Send a ping to confirm a successful connection
-    await client.db('admin').command({ ping: 1 })
-    console.log(
-      'Pinged your deployment. You successfully connected to MongoDB!'
-    )
+    // await client.db('admin').command({ ping: 1 })
+    // console.log(
+    //   'Pinged your deployment. You successfully connected to MongoDB!'
+    // )
   } finally {
     // Ensures that the client will close when you finish/error
   }
